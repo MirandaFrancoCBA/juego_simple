@@ -9,6 +9,7 @@ class Game:
     game_height = 800
     game_width = 1200
     score = 0
+    #rotar1 = pygame.transform.rotate("cuare2.png", 45)
     
     def __init__(self):
 
@@ -25,10 +26,16 @@ class Game:
         self.apple = Apple()
         self._display_surf = pygame.display.set_mode((self.game_width,self.game_height), pygame.HWSURFACE)
 
-        pygame.display.set_caption("Viborota")
+        """pygame.display.set_caption("Viborota")
         img_folder = os.path.join(os.path.dirname(__file__), 'img')  
         self._flag_img = pygame.image.load(os.path.join(img_folder, "cuare2.png")).convert()  
-        self._apple_img = pygame.image.load(os.path.join(img_folder, "apple2.png")).convert()
+        self._apple_img = pygame.image.load(os.path.join(img_folder, "apple2.png")).convert()"""
+
+        img_folder = os.path.join(os.path.dirname(__file__), 'img')  
+        original_img = pygame.image.load(os.path.join(img_folder, "cuare2.png")).convert_alpha()  # Usar convert_alpha para imágenes con transparencia  
+        self._flag_img = pygame.transform.rotate(original_img, self.player.cambio_movimiento())  # Rota la imagen 45 grados  
+        self._apple_img = pygame.image.load(os.path.join(img_folder, "apple2.png")).convert_alpha()
+         
 
     
     def on_render(self):

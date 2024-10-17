@@ -1,0 +1,142 @@
+
+import pygame  
+import time  
+import os  
+from Player import *  
+from Apple import *  
+
+class Game:  
+    game_height = 800  
+    game_width = 1200  
+    score = 0  
+    
+    def __init__(self):  
+        self._running = True  
+        self.myfont = None  
+        self._flag_img = None  # Inicializar en None  
+
+    def scorePlus(self):  
+        self.score += 100  
+
+    def on_init(self):  
+        pygame.init()  
+        pygame.font.init()  # Inicializa la fuente para poder escribir puntajes  
+        self.myfont = pygame.font.SysFont("monospace", 36, True, True)  
+        self.player = Player()  
+        self.apple = Apple()  
+        self._display_surf = pygame.display.set_mode((self.game_width, self.game_height), pygame.HWSURFACE)  
+
+        img_folder = os.path.join(os.path.dirname(__file__), 'img')  
+        self._apple_img = pygame.image.load(os.path.join(img_folder, "apple2.png")).convert_alpha()  
+
+    def on_render(self):  
+        self._display_surf.fill((0, 0, 0))  
+
+        # Dibujo de los límites  
+        pygame.draw.rect(self._display_surf, (0, 255, 0), (self.game_width - 10, 0, 10, self.game_height))  # Derecha  
+        pygame.draw.rect(self._display_surf, (0, 255, 0), (0, self.game_height - 10, self.game_width, 10))  # Abajo  
+        pygame.draw.rect(self._display_surf, (0, 255, 0), (0, 0, self.game_width, 10))  # Arriba  
+        pygame.draw.rect(self._display_surf, (0, 255, 0), (0, 0, 10, self.game_height))  # Izquierda  
+
+        # Rotar imagen según la dirección actual.  
+        rotated_flag_img = pygame.transform.rotate(self._flag_img, -self.player.cambio_movimiento())  # Rota la imagen  
+        img_rect = rotated_flag_img.get_rect(center=(self.player.x, self.player.y))  # Ajustar posición a la nueva imagen rotada  
+        self._display_surf.blit(rotated_flag_img, img_rect.topleft)  
+
+        self._display_surf.blit(self._apple_img, (self.apple.randx, self.apple.randy))  
+        scoretext = self.myfont.render("Score = " + str(self.score), 1, (200, 255, 255))  
+        self._display_surf.blit(scoretext, (800, 10))  
+
+        # Dibuja el cuerpo del jugador  
+        for pos in self.player.positions:  
+            self._display_surf.blit(rotated_flag_img, (pos[0], pos[1]))  
+
+        pygame.display.flip()  
+
+    def on_cleanup(self):  
+        pygame.quit()  
+
+    def on_execute(self):  
+        speedup = 0.200  
+        self._flag_img = pygame.image.load(os.path.join(os.path.dirname(__file__), 'img', "cuare2.png")).convert_alpha()  # Cargar la imagen aquí  
+
+        if self.on_init() == False:  
+            self._running = False  
+        while self._running:  
+            for event in pygame.event.get():  
+                if event.type == pygame.QUIT:  
+                    self._running = False  
+
+            self.player.movimiento()  
+            if len(self.player.positions) < self.player.lenght:  
+                self.player.positions.append((self.player.x, self.player.y))  
+            else:  
+                self.player.positions.pop(0)  
+                self.player.positions.append((self.player.x, self.player.y))  
+
+            if self.apple.comerManzana(self.player.x, self.player.y, self.apple.randx, self.apple.randy, 40):  
+                self.apple.nuevaManzana()  
+                self.player.lenght += 1  
+                self.scorePlus()  
+                if speedup > 0.100:  
+                    speedup -= 0.025  
+
+            self.on_render()  
+            time.sleep(speedup)  
+
+        self.on_cleanup()  
+
+class Player:  
+    x = 0  
+    y = 0  
+    d = 0  
+    direccion = 0  
+
+    positions = []  
+    lenght = 5  
+
+    def movimiento(self):  
+        keys = pygame.key.get_pressed()  
+        if keys[pygame.K_RIGHT]:  
+            self.d = 0  
+            self.direccion = 0  
+        if keys[pygame.K_LEFT]:  
+            self.d = 1  
+            self.direccion = 180  # Cambia dirección a 180 grados  
+        if keys[pygame.K_UP]:  
+            self.d = 2  
+            self.direccion = 90  # Cambia dirección a 90 grados  
+        if keys[pygame.K_DOWN]:  
+            self.d = 3  
+            self.direccion = 270  # Cambia dirección a 270 grados  
+
+        if self.d == 0:  
+            self.x += 40  
+        elif self.d == 1:  
+            self.x -= 40  
+        elif self.d == 2:  
+            self.y -= 40  
+        elif self.d == 3:  
+            self.y += 40  
+        else:  
+            pass  
+
+    def cambio_movimiento(self):  
+        return self.direccion  
+
+# Código para iniciar el juego  
+if __name__ == "__main__":  
+    game = Game()  
+    game.on_execute()  
+Cambios Realizados:
+Carga de la imagen _flag_img: Ahora sólo se carga en on_execute() y se mantiene la referencia. Este cambio evita que se recargue la imagen en cada renderización, lo que ahorra recursos.
+
+Rotación de la imagen: La rotación ahora se maneja en on_render(), donde se usa pygame.transform.rotate() cada vez que se dibuja la imagen, basándose en la dirección actual del jugador.
+
+Definición de dirección: He ajustado la definición de la dirección en la clase Player. Ahora, self.direccion se actualiza en función de la tecla presionada, lo que facilitará la rotación.
+
+Gestión de la posición: Para colocar correctamente la imagen rotada, ajustamos el rectángulo correspondiente a la imagen rotada y la dibujamos en su nueva posición con img_rect.topleft.
+
+Control de rotación: Al presionar las teclas de dirección, cada uno de los controles actualiza su dirección y, por lo tanto, la rotación de la imagen.
+
+Con estos cambios, la imagen girará de acuerdo con la dirección en la que te estás moviendo.
